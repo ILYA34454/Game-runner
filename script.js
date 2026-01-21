@@ -35,25 +35,30 @@ Object.values(images).forEach(img => {
     };
 });
 
-// Игрок
+// Игрок - УВЕЛИЧЕН!
 const player = {
     x: 100,
     y: 0,
-    width: 80,
-    height: 100,
+    width: 100,  // Было 60, стало 100!
+    height: 120, // Было 80, стало 120!
     velocityY: 0,
     gravity: 0.8,
-    jumpPower: -16,
+    jumpPower: -17, // Увеличен прыжок
     isJumping: false,
-    groundY: canvas.height - 120,
+    groundY: canvas.height - 140,
     
     draw() {
         if (images.player.complete && images.player.naturalWidth > 0) {
             ctx.drawImage(images.player, this.x, this.y, this.width, this.height);
         } else {
-            // Запасной вариант
+            // Рисуем человечка
             ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillRect(this.x, this.y + 30, this.width, this.height - 30);
+            // Голова
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + 15, 15, 0, Math.PI * 2);
+            ctx.fill();
         }
     },
     
@@ -85,17 +90,31 @@ let coins = [];
 class Obstacle {
     constructor() {
         this.x = canvas.width;
-        this.y = player.groundY + player.height - 60;
-        this.width = 50;
-        this.height = 60;
+        this.y = player.groundY + player.height - 70; // Подняли чуть выше
+        this.width = 55;
+        this.height = 70;
     }
     
     draw() {
         if (images.fire.complete && images.fire.naturalWidth > 0) {
             ctx.drawImage(images.fire, this.x, this.y, this.width, this.height);
         } else {
+            // Рисуем огонь
             ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width/2, this.y);
+            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.lineTo(this.x, this.y + this.height);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width/2, this.y + 10);
+            ctx.lineTo(this.x + this.width - 10, this.y + this.height - 10);
+            ctx.lineTo(this.x + 10, this.y + this.height - 10);
+            ctx.closePath();
+            ctx.fill();
         }
     }
     
@@ -107,9 +126,17 @@ class Obstacle {
 class Coin {
     constructor() {
         this.x = canvas.width;
-        this.y = Math.random() < 0.5 ? player.groundY - 50 : player.groundY - 120;
-        this.width = 40;
-        this.height = 40;
+        // Монеты теперь НИЖЕ - досягаемые!
+        const randomHeight = Math.random();
+        if (randomHeight < 0.4) {
+            this.y = player.groundY + 20; // На земле
+        } else if (randomHeight < 0.7) {
+            this.y = player.groundY - 40; // Низкий прыжок
+        } else {
+            this.y = player.groundY - 80; // Средний прыжок
+        }
+        this.width = 45;
+        this.height = 45;
         this.collected = false;
     }
     
@@ -122,6 +149,9 @@ class Coin {
                 ctx.beginPath();
                 ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.strokeStyle = '#f1c40f';
+                ctx.lineWidth = 3;
+                ctx.stroke();
             }
         }
     }
@@ -170,13 +200,15 @@ function checkCollision(rect1, rect2) {
 }
 
 function spawnObstacle() {
-    if (frameCount % 150 === 0) {
+    // Препятствия реже!
+    if (frameCount % 180 === 0) {
         obstacles.push(new Obstacle());
     }
 }
 
 function spawnCoin() {
-    if (frameCount % 60 === 0 && Math.random() < 0.85) {
+    // Монет БОЛЬШЕ!
+    if (frameCount % 50 === 0 && Math.random() < 0.9) {
         coins.push(new Coin());
     }
 }
@@ -186,8 +218,9 @@ function update() {
     
     frameCount++;
     
-    if (frameCount % 400 === 0) {
-        gameSpeed += 0.3;
+    // Ускорение еще медленнее
+    if (frameCount % 500 === 0) {
+        gameSpeed += 0.25;
     }
     
     player.update();
