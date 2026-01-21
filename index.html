@@ -43,11 +43,11 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 16px;
+            font-size: 18px;
             color: #ffff00;
             text-shadow: 3px 3px 0px #000;
             background: rgba(0,0,0,0.7);
-            padding: 10px;
+            padding: 12px;
             border: 3px solid rgba(21, 151, 108, 1);
         }
 
@@ -57,7 +57,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: #1a1a2e;
-            padding: 30px;
+            padding: 40px;
             border: 4px solid rgba(21, 151, 108, 1);
             text-align: center;
             display: none;
@@ -70,14 +70,14 @@
         .modal h1 {
             color: rgba(21, 151, 108, 1);
             margin: 0 0 20px 0;
-            font-size: 24px;
+            font-size: 28px;
             text-shadow: 3px 3px 0px #000;
         }
 
         .modal h2 {
-            color: #ff00ff;
+            color: #ff6b6b;
             margin: 0 0 20px 0;
-            font-size: 20px;
+            font-size: 24px;
             text-shadow: 3px 3px 0px #000;
         }
 
@@ -146,6 +146,32 @@
             margin-top: 10px;
         }
 
+        .legend {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid rgba(21, 151, 108, 1);
+            text-align: left;
+        }
+
+        .legend h3 {
+            color: #ffff00;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .legend ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .legend li {
+            margin: 10px 0;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
         #leaderboardTable {
             width: 100%;
             margin-top: 20px;
@@ -188,7 +214,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="1200" height="400"></canvas>
+        <canvas id="gameCanvas" width="1400" height="600"></canvas>
         <div id="score">ОЧКИ: 0</div>
 
         <!-- Форма регистрации -->
@@ -206,21 +232,28 @@
             <button onclick="registerPlayer()">НАЧАТЬ ИГРУ</button>
         </div>
 
-        <!-- Экран начала игры -->
-        <div id="startScreen" class="modal">
-            <h1>🏢 OFFICE RUNNER 🏃</h1>
-            <p>⌨️ ПРОБЕЛ = ПРЫЖОК</p>
-            <p>🔥 ИЗБЕГАЙ ОГНЯ</p>
-            <p>🪙 СОБИРАЙ МОНЕТЫ</p>
+        <!-- Легенда игры -->
+        <div id="legendScreen" class="modal">
+            <h1>📜 ЛЕГЕНДА 📜</h1>
+            <div class="legend">
+                <h3>⚡ ТВОЯ МИССИЯ ⚡</h3>
+                <ul>
+                    <li>🏃 ТЫ - ОФИСНЫЙ РАБОТНИК НА ГРАНИ ВЫГОРАНИЯ</li>
+                    <li>🪙 СОБИРАЙ МОНЕТЫ = +10 ОЧКОВ</li>
+                    <li>🔥 ИЗБЕГАЙ ОГНЯ = НЕ ВЫГОРИ!</li>
+                    <li>⌨️ ПРОБЕЛ = ПРЫЖОК</li>
+                    <li>🏆 НАБЕРИ БОЛЬШЕ ВСЕХ И СТАНЬ ЛЕГЕНДОЙ ОФИСА!</li>
+                </ul>
+            </div>
             <p style="color: rgba(21, 151, 108, 1); margin-top: 20px;">ИГРОК: <span id="displayName"></span></p>
             <p style="color: #ff00ff;">ДОЛЖНОСТЬ: <span id="displayPosition"></span></p>
-            <button onclick="startGame()">СТАРТ!</button>
+            <button onclick="startGame()">ВПЕРЁД!</button>
         </div>
 
         <!-- Game Over экран -->
         <div id="gameOver" class="modal">
-            <h2>💀 GAME OVER 💀</h2>
-            <p>ВАШ СЧЁТ: <span id="finalScore" style="color: #ffff00; font-size: 20px;">0</span></p>
+            <h2>🔥 ТЫ ВЫГОРЕЛ 🔥</h2>
+            <p>ВАШ СЧЁТ: <span id="finalScore" style="color: #ffff00; font-size: 24px;">0</span></p>
             <p class="comment" id="scoreComment"></p>
             <div id="savingStatus" class="loading" style="display:none;">⏳ СОХРАНЕНИЕ...</div>
             <button onclick="viewLeaderboard()">ТАБЛИЦА ЛИДЕРОВ</button>
