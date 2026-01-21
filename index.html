@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Runner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #2c3e50;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+        }
+        canvas {
+            border: 3px solid #34495e;
+            background: #87ceeb;
+            display: block;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        #gameOver h2 {
+            color: #e74c3c;
+            margin: 0 0 20px 0;
+            font-size: 36px;
+        }
+        #gameOver p {
+            color: #fff;
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        #gameOver button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #gameOver button:hover {
+            background: #229954;
+        }
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        #startScreen h1 {
+            color: #3498db;
+            margin: 0 0 20px 0;
+            font-size: 48px;
+        }
+        #startScreen p {
+            color: #ecf0f1;
+            font-size: 20px;
+            margin: 15px 0;
+        }
+        #startScreen button {
+            margin-top: 30px;
+            padding: 20px 50px;
+            font-size: 24px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #startScreen button:hover {
+            background: #229954;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="400"></canvas>
+        <div id="score">Очки: 0</div>
+        <div id="startScreen">
+            <h1>🏢 Office Runner 🏃</h1>
+            <p>⌨️ Нажмите ПРОБЕЛ чтобы прыгать</p>
+            <p>🔥 Избегайте огня</p>
+            <p>🪙 Собирайте монеты</p>
+            <button onclick="startGame()">НАЧАТЬ ИГРУ</button>
+        </div>
+        <div id="gameOver">
+            <h2>GAME OVER</h2>
+            <p>Ваш счёт: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Играть снова</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
