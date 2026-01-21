@@ -6,7 +6,7 @@ const ctx = canvas.getContext('2d');
 
 let gameRunning = false;
 let score = 0;
-let gameSpeed = 4;
+let gameSpeed = 4.5;
 let frameCount = 0;
 
 // Данные игрока
@@ -45,17 +45,17 @@ Object.values(images).forEach(img => {
     };
 });
 
-// Игрок
+// Игрок - увеличен под новый размер canvas
 const player = {
-    x: 100,
+    x: 120,
     y: 0,
-    width: 100,
-    height: 120,
+    width: 130,
+    height: 150,
     velocityY: 0,
-    gravity: 0.8,
-    jumpPower: -19,
+    gravity: 0.9,
+    jumpPower: -22,
     isJumping: false,
-    groundY: canvas.height - 140,
+    groundY: canvas.height - 190,
     
     draw() {
         if (images.player.complete && images.player.naturalWidth > 0) {
@@ -63,11 +63,11 @@ const player = {
         } else {
             // Рисуем человечка
             ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(this.x, this.y + 30, this.width, this.height - 30);
+            ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
             // Голова
             ctx.fillStyle = '#f39c12';
             ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + 15, 15, 0, Math.PI * 2);
+            ctx.arc(this.x + this.width/2, this.y + 18, 18, 0, Math.PI * 2);
             ctx.fill();
         }
     },
@@ -100,10 +100,10 @@ let coins = [];
 class Obstacle {
     constructor() {
         this.x = canvas.width;
-        this.y = player.groundY + player.height - 70;
-        this.width = 55;
-        this.height = 70;
-        this.hitboxShrink = 15;
+        this.y = player.groundY + player.height - 90;
+        this.width = 70;
+        this.height = 90;
+        this.hitboxShrink = 20;
     }
     
     draw() {
@@ -121,9 +121,9 @@ class Obstacle {
             
             ctx.fillStyle = '#f39c12';
             ctx.beginPath();
-            ctx.moveTo(this.x + this.width/2, this.y + 10);
-            ctx.lineTo(this.x + this.width - 10, this.y + this.height - 10);
-            ctx.lineTo(this.x + 10, this.y + this.height - 10);
+            ctx.moveTo(this.x + this.width/2, this.y + 15);
+            ctx.lineTo(this.x + this.width - 15, this.y + this.height - 15);
+            ctx.lineTo(this.x + 15, this.y + this.height - 15);
             ctx.closePath();
             ctx.fill();
         }
@@ -148,14 +148,14 @@ class Coin {
         this.x = canvas.width;
         const randomHeight = Math.random();
         if (randomHeight < 0.4) {
-            this.y = player.groundY + 20;
+            this.y = player.groundY + 30;
         } else if (randomHeight < 0.7) {
-            this.y = player.groundY - 40;
+            this.y = player.groundY - 50;
         } else {
-            this.y = player.groundY - 80;
+            this.y = player.groundY - 100;
         }
-        this.width = 45;
-        this.height = 45;
+        this.width = 55;
+        this.height = 55;
         this.collected = false;
     }
     
@@ -169,7 +169,7 @@ class Coin {
                 ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = '#f1c40f';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 4;
                 ctx.stroke();
             }
         }
@@ -236,7 +236,7 @@ function update() {
     frameCount++;
     
     if (frameCount % 500 === 0) {
-        gameSpeed += 0.25;
+        gameSpeed += 0.3;
     }
     
     player.update();
@@ -395,22 +395,22 @@ function registerPlayer() {
     // Сохраняем в localStorage чтобы не спрашивать снова
     localStorage.setItem('officeRunnerPlayer', JSON.stringify(playerData));
     
-    // Показываем экран старта
+    // Показываем легенду
     document.getElementById('registrationScreen').style.display = 'none';
     document.getElementById('displayName').textContent = name;
     document.getElementById('displayPosition').textContent = position;
-    document.getElementById('startScreen').style.display = 'block';
+    document.getElementById('legendScreen').style.display = 'block';
 }
 
 function startGame() {
-    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('legendScreen').style.display = 'none';
     restartGame();
 }
 
 function restartGame() {
     gameRunning = true;
     score = 0;
-    gameSpeed = 4;
+    gameSpeed = 4.5;
     frameCount = 0;
     obstacles = [];
     coins = [];
@@ -438,15 +438,19 @@ function closeLeaderboard() {
     document.getElementById('gameOver').style.display = 'block';
 }
 
+// ИСПРАВЛЕНИЕ: Пробел не работает когда фокус на input
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        e.preventDefault();
-        if (!gameRunning) {
-            if (document.getElementById('startScreen').style.display === 'block') {
-                startGame();
+        // Проверяем что фокус НЕ на input полях
+        if (document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            if (!gameRunning) {
+                if (document.getElementById('legendScreen').style.display === 'block') {
+                    startGame();
+                }
+            } else {
+                player.jump();
             }
-        } else {
-            player.jump();
         }
     }
 });
@@ -459,7 +463,7 @@ window.addEventListener('load', () => {
         document.getElementById('registrationScreen').style.display = 'none';
         document.getElementById('displayName').textContent = playerData.name;
         document.getElementById('displayPosition').textContent = playerData.position;
-        document.getElementById('startScreen').style.display = 'block';
+        document.getElementById('legendScreen').style.display = 'block';
     }
 });
 
