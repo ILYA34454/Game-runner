@@ -16,8 +16,8 @@ let playerData = {
     registered: false
 };
 
-// Фоновая музыка (пробелы кодируются как %20)
-const bgMusic = new Audio('Darci%20-%20On%20My%20Own.mp3');
+// Фоновая музыка
+const bgMusic = new Audio('music.mp3');
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
@@ -31,8 +31,8 @@ const images = {
 };
 
 images.backgroundDay.src = 'background.png';
-images.backgroundNight.src = '6971455f53483db9043c3be0_result_0.png'; // Вечерний офис
-images.playerRun.src = 'Animate%20run.gif'; // Анимация бега (пробел как %20)
+images.backgroundNight.src = 'background-night.png';
+images.playerRun.src = 'player-run.gif';
 images.fire.src = 'fire.png';
 images.coin.src = 'coin.png';
 
