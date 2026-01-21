@@ -1,3 +1,6 @@
+// GOOGLE SHEETS URL
+const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbx1pgEzolCLPUjlDN0p9rttkluF-XkCh6kdu4As3Vfx54QYY_vRRWdHjeuXrVLJ5_Fv/exec';
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -5,6 +8,13 @@ let gameRunning = false;
 let score = 0;
 let gameSpeed = 4;
 let frameCount = 0;
+
+// Данные игрока
+let playerData = {
+    name: '',
+    position: '',
+    registered: false
+};
 
 // Загрузка изображений
 const images = {
@@ -35,15 +45,15 @@ Object.values(images).forEach(img => {
     };
 });
 
-// Игрок - УВЕЛИЧЕН!
+// Игрок
 const player = {
     x: 100,
     y: 0,
-    width: 100,  // Было 60, стало 100!
-    height: 120, // Было 80, стало 120!
+    width: 100,
+    height: 120,
     velocityY: 0,
     gravity: 0.8,
-    jumpPower: -19, // Прыжок еще сильнее!
+    jumpPower: -19,
     isJumping: false,
     groundY: canvas.height - 140,
     
@@ -93,8 +103,7 @@ class Obstacle {
         this.y = player.groundY + player.height - 70;
         this.width = 55;
         this.height = 70;
-        // Хитбокс меньше для легкости!
-        this.hitboxShrink = 15; // Пикселей с каждой стороны
+        this.hitboxShrink = 15;
     }
     
     draw() {
@@ -120,7 +129,6 @@ class Obstacle {
         }
     }
     
-    // Возвращаем уменьшенный хитбокс для проверки столкновения
     getHitbox() {
         return {
             x: this.x + this.hitboxShrink,
@@ -138,14 +146,13 @@ class Obstacle {
 class Coin {
     constructor() {
         this.x = canvas.width;
-        // Монеты теперь НИЖЕ - досягаемые!
         const randomHeight = Math.random();
         if (randomHeight < 0.4) {
-            this.y = player.groundY + 20; // На земле
+            this.y = player.groundY + 20;
         } else if (randomHeight < 0.7) {
-            this.y = player.groundY - 40; // Низкий прыжок
+            this.y = player.groundY - 40;
         } else {
-            this.y = player.groundY - 80; // Средний прыжок
+            this.y = player.groundY - 80;
         }
         this.width = 45;
         this.height = 45;
@@ -212,14 +219,12 @@ function checkCollision(rect1, rect2) {
 }
 
 function spawnObstacle() {
-    // Препятствия реже!
     if (frameCount % 180 === 0) {
         obstacles.push(new Obstacle());
     }
 }
 
 function spawnCoin() {
-    // Монет БОЛЬШЕ!
     if (frameCount % 50 === 0 && Math.random() < 0.9) {
         coins.push(new Coin());
     }
@@ -230,7 +235,6 @@ function update() {
     
     frameCount++;
     
-    // Ускорение еще медленнее
     if (frameCount % 500 === 0) {
         gameSpeed += 0.25;
     }
@@ -242,7 +246,6 @@ function update() {
     obstacles = obstacles.filter(obs => {
         obs.update();
         
-        // Используем уменьшенный хитбокс огня!
         const obstacleHitbox = obs.getHitbox();
         if (checkCollision(player, obstacleHitbox)) {
             gameOver();
@@ -258,7 +261,7 @@ function update() {
         if (!coin.collected && checkCollision(player, coin)) {
             coin.collected = true;
             score += 10;
-            document.getElementById('score').textContent = `Очки: ${score}`;
+            document.getElementById('score').textContent = `ОЧКИ: ${score}`;
         }
         
         return coin.x + coin.width > 0;
@@ -280,35 +283,123 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+function getScoreComment(score) {
+    if (score === 0) {
+        return '😢 ПОЗОР СЕМЬИ!';
+    } else if (score < 100) {
+        return '🥖 НА БАТОН НЕ ХВАТИТ...';
+    } else if (score < 200) {
+        return '🍞 НА БАТОН ХВАТИТ!';
+    } else if (score < 350) {
+        return '💰 КОПИШЬ НА ЧТО-ТО?';
+    } else if (score < 500) {
+        return '📱 НА АЙФОН НАСОБИРАЛ!';
+    } else if (score < 700) {
+        return '👔 НАЧАЛЬНИК ДОВОЛЕН!';
+    } else if (score < 1000) {
+        return '🌟 ОТЛИЧНАЯ РАБОТА!';
+    } else {
+        return '🏆 ЛЕГЕНДА ОФИСА!';
+    }
+}
+
+async function saveToGoogleSheets(name, position, score) {
+    try {
+        document.getElementById('savingStatus').style.display = 'block';
+        
+        const response = await fetch(GOOGLE_SHEETS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                position: position,
+                score: score
+            })
+        });
+        
+        console.log('Результат отправлен в Google Sheets!');
+        document.getElementById('savingStatus').textContent = '✅ СОХРАНЕНО!';
+        
+    } catch (error) {
+        console.error('Ошибка при отправке:', error);
+        document.getElementById('savingStatus').textContent = '❌ ОШИБКА СОХРАНЕНИЯ';
+    }
+}
+
+async function loadLeaderboard() {
+    try {
+        const response = await fetch(GOOGLE_SHEETS_URL);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.leaderboard) {
+            displayLeaderboard(data.leaderboard);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки лидерборда:', error);
+        document.getElementById('leaderboardLoading').textContent = '❌ ОШИБКА ЗАГРУЗКИ';
+    }
+}
+
+function displayLeaderboard(leaderboard) {
+    const tbody = document.getElementById('leaderboardBody');
+    tbody.innerHTML = '';
+    
+    // Показываем топ-10
+    const top10 = leaderboard.slice(0, 10);
+    
+    top10.forEach((entry, index) => {
+        const row = tbody.insertRow();
+        const place = index + 1;
+        
+        let medal = '';
+        if (place === 1) medal = '🥇';
+        else if (place === 2) medal = '🥈';
+        else if (place === 3) medal = '🥉';
+        
+        row.insertCell(0).textContent = `${medal} ${place}`;
+        row.insertCell(1).textContent = entry.name;
+        row.insertCell(2).textContent = entry.position;
+        row.insertCell(3).textContent = entry.score;
+    });
+    
+    document.getElementById('leaderboardLoading').style.display = 'none';
+    document.getElementById('leaderboardTable').style.display = 'table';
+}
+
 function gameOver() {
     gameRunning = false;
     document.getElementById('finalScore').textContent = score;
+    document.getElementById('scoreComment').textContent = getScoreComment(score);
+    document.getElementById('gameOver').style.display = 'block';
     
-    // Забавные комментарии в зависимости от очков
-    let comment = '';
-    if (score === 0) {
-        comment = '😢 Позор семьи!';
-    } else if (score < 100) {
-        comment = '🥖 На батон хлеба не хватит...';
-    } else if (score < 200) {
-        comment = '🍞 На батон хлеба хватит!';
-    } else if (score < 350) {
-        comment = '💰 Копишь на что-то серьёзное?';
-    } else if (score < 500) {
-        comment = '📱 Кралечке на айфон насобирал!';
-    } else if (score < 700) {
-        comment = '👔 Начальник доволен, но можно лучше!';
-    } else if (score < 1000) {
-        comment = '🌟 Отличная работа!';
-    } else {
-        comment = '🏆 Легенда офиса!';
+    // Сохраняем результат в Google Sheets
+    saveToGoogleSheets(playerData.name, playerData.position, score);
+}
+
+function registerPlayer() {
+    const name = document.getElementById('playerName').value.trim();
+    const position = document.getElementById('playerPosition').value.trim();
+    
+    if (!name || !position) {
+        alert('ЗАПОЛНИТЕ ВСЕ ПОЛЯ!');
+        return;
     }
     
-    // Добавляем комментарий в Game Over экран
-    const finalScoreElement = document.getElementById('finalScore');
-    finalScoreElement.innerHTML = score + '<br><span style="font-size: 18px; color: #f39c12;">' + comment + '</span>';
+    playerData.name = name;
+    playerData.position = position;
+    playerData.registered = true;
     
-    document.getElementById('gameOver').style.display = 'block';
+    // Сохраняем в localStorage чтобы не спрашивать снова
+    localStorage.setItem('officeRunnerPlayer', JSON.stringify(playerData));
+    
+    // Показываем экран старта
+    document.getElementById('registrationScreen').style.display = 'none';
+    document.getElementById('displayName').textContent = name;
+    document.getElementById('displayPosition').textContent = position;
+    document.getElementById('startScreen').style.display = 'block';
 }
 
 function startGame() {
@@ -327,22 +418,48 @@ function restartGame() {
     player.velocityY = 0;
     player.isJumping = false;
     
-    document.getElementById('score').textContent = 'Очки: 0';
+    document.getElementById('score').textContent = 'ОЧКИ: 0';
     document.getElementById('gameOver').style.display = 'none';
+    document.getElementById('leaderboardScreen').style.display = 'none';
+    document.getElementById('savingStatus').style.display = 'none';
+}
+
+function viewLeaderboard() {
+    document.getElementById('gameOver').style.display = 'none';
+    document.getElementById('leaderboardScreen').style.display = 'block';
+    document.getElementById('leaderboardLoading').style.display = 'block';
+    document.getElementById('leaderboardTable').style.display = 'none';
+    
+    loadLeaderboard();
+}
+
+function closeLeaderboard() {
+    document.getElementById('leaderboardScreen').style.display = 'none';
+    document.getElementById('gameOver').style.display = 'block';
 }
 
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
         if (!gameRunning) {
-            if (document.getElementById('startScreen').style.display !== 'none') {
+            if (document.getElementById('startScreen').style.display === 'block') {
                 startGame();
-            } else {
-                restartGame();
             }
         } else {
             player.jump();
         }
+    }
+});
+
+// Проверяем есть ли сохраненные данные игрока
+window.addEventListener('load', () => {
+    const savedPlayer = localStorage.getItem('officeRunnerPlayer');
+    if (savedPlayer) {
+        playerData = JSON.parse(savedPlayer);
+        document.getElementById('registrationScreen').style.display = 'none';
+        document.getElementById('displayName').textContent = playerData.name;
+        document.getElementById('displayPosition').textContent = playerData.position;
+        document.getElementById('startScreen').style.display = 'block';
     }
 });
 
