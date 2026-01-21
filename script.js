@@ -21,34 +21,80 @@ const bgMusic = new Audio('music.mp3');
 bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
+// ============================================
+// КЛАСС ДЛЯ SPRITE SHEET АНИМАЦИИ
+// ============================================
+class SpriteAnimation {
+    constructor(image, frameWidth, frameHeight, totalFrames, fps = 20) {
+        this.image = image;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.totalFrames = totalFrames;
+        this.currentFrame = 0;
+        this.fps = fps;
+        this.frameInterval = 1000 / fps;
+        this.lastFrameTime = 0;
+    }
+
+    update(currentTime) {
+        if (currentTime - this.lastFrameTime >= this.frameInterval) {
+            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+            this.lastFrameTime = currentTime;
+        }
+    }
+
+    draw(ctx, x, y, width, height) {
+        // Для однострочного sprite sheet
+        const sourceX = this.currentFrame * this.frameWidth;
+        
+        ctx.drawImage(
+            this.image,
+            sourceX, 0,
+            this.frameWidth, this.frameHeight,
+            x, y,
+            width, height
+        );
+    }
+}
+
 // Загрузка изображений
 const images = {
     backgroundDay: new Image(),
     backgroundNight: new Image(),
-    playerRun: new Image(), // GIF анимация
+    playerRun: new Image(),
     fire: new Image(),
     coin: new Image()
 };
 
 images.backgroundDay.src = 'background.png';
 images.backgroundNight.src = 'background-night.png';
-images.playerRun.src = 'player-run.gif';
+images.playerRun.src = 'player-run-optimized.png'; // ← ИСПОЛЬЗУЕМ ОПТИМИЗИРОВАННЫЙ ФАЙЛ
 images.fire.src = 'fire.png';
 images.coin.src = 'coin.png';
 
 let imagesLoaded = 0;
 const totalImages = 5;
+let playerAnimation = null;
 
 Object.values(images).forEach(img => {
     img.onload = () => {
         imagesLoaded++;
         console.log('Загружено:', img.src);
         if (imagesLoaded === totalImages) {
-            console.log('ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
+            console.log('✅ ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
+            
+            // Инициализируем анимацию с оптимизированными параметрами
+            playerAnimation = new SpriteAnimation(
+                images.playerRun,
+                480,  // ширина одного кадра
+                480,  // высота кадра
+                12,   // всего 12 кадров (оптимизировано!)
+                20    // FPS анимации
+            );
         }
     };
     img.onerror = () => {
-        console.error('Ошибка загрузки:', img.src);
+        console.error('❌ Ошибка загрузки:', img.src);
     };
 });
 
@@ -65,11 +111,10 @@ const player = {
     groundY: canvas.height - 190,
     
     draw() {
-        // Используем GIF для анимации
-        if (images.playerRun.complete && images.playerRun.naturalWidth > 0) {
-            ctx.drawImage(images.playerRun, this.x, this.y, this.width, this.height);
+        if (playerAnimation && images.playerRun.complete) {
+            playerAnimation.draw(ctx, this.x, this.y, this.width, this.height);
         } else {
-            // Запасной вариант
+            // Запасной вариант (пока загружается)
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
             ctx.fillStyle = '#f39c12';
@@ -188,13 +233,11 @@ class Coin {
 
 // Фон (дневной или вечерний)
 let bgX = 0;
-let currentBackground = 'day'; // 'day' или 'night'
+let currentBackground = 'day';
 
 function drawBackground() {
-    // Выбираем фон в зависимости от счёта
     const bgImage = score >= 450 ? images.backgroundNight : images.backgroundDay;
     
-    // Меняем режим если достигли 450
     if (score >= 450 && currentBackground === 'day') {
         currentBackground = 'night';
         console.log('🌙 НАСТУПИЛ ВЕЧЕР!');
@@ -222,7 +265,6 @@ function drawBackground() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     
-    // Земля
     ctx.fillStyle = '#95a5a6';
     ctx.fillRect(0, player.groundY + player.height, canvas.width, canvas.height);
 }
@@ -258,6 +300,11 @@ function update() {
     player.update();
     spawnObstacle();
     spawnCoin();
+    
+    // Обновляем анимацию персонажа
+    if (playerAnimation) {
+        playerAnimation.update(performance.now());
+    }
     
     obstacles = obstacles.filter(obs => {
         obs.update();
@@ -387,7 +434,6 @@ function displayLeaderboard(leaderboard) {
 function gameOver() {
     gameRunning = false;
     
-    // Останавливаем музыку
     bgMusic.pause();
     bgMusic.currentTime = 0;
     
@@ -423,7 +469,6 @@ function startGame() {
     document.getElementById('legendScreen').style.display = 'none';
     restartGame();
     
-    // Запускаем музыку
     bgMusic.play().catch(e => {
         console.log('Автовоспроизведение заблокировано браузером');
     });
@@ -439,14 +484,13 @@ function restartGame() {
     player.y = player.groundY;
     player.velocityY = 0;
     player.isJumping = false;
-    currentBackground = 'day'; // Сброс на дневной фон
+    currentBackground = 'day';
     
     document.getElementById('score').textContent = 'ОЧКИ: 0';
     document.getElementById('gameOver').style.display = 'none';
     document.getElementById('leaderboardScreen').style.display = 'none';
     document.getElementById('savingStatus').style.display = 'none';
     
-    // Запускаем музыку если еще не играет
     if (bgMusic.paused) {
         bgMusic.play().catch(e => {
             console.log('Автовоспроизведение заблокировано');
@@ -468,7 +512,6 @@ function closeLeaderboard() {
     document.getElementById('gameOver').style.display = 'block';
 }
 
-// Пробел работает в input, но не запускает игру
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         if (document.activeElement.tagName === 'INPUT') {
@@ -486,7 +529,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Проверяем сохраненные данные
 window.addEventListener('load', () => {
     const savedPlayer = localStorage.getItem('officeRunnerPlayer');
     if (savedPlayer) {
