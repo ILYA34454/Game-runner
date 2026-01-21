@@ -16,21 +16,28 @@ let playerData = {
     registered: false
 };
 
+// Фоновая музыка
+const bgMusic = new Audio('Darci_-_On_My_Own.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.3;
+
 // Загрузка изображений
 const images = {
-    background: new Image(),
-    player: new Image(),
+    backgroundDay: new Image(),
+    backgroundNight: new Image(),
+    playerRun: new Image(), // GIF анимация
     fire: new Image(),
     coin: new Image()
 };
 
-images.background.src = 'background.png';
-images.player.src = 'player.png';
+images.backgroundDay.src = 'background.png';
+images.backgroundNight.src = '6971455f53483db9043c3be0_result_0_1.png'; // Вечерний офис
+images.playerRun.src = 'Animate_run.gif'; // Анимация бега
 images.fire.src = 'fire.png';
 images.coin.src = 'coin.png';
 
 let imagesLoaded = 0;
-const totalImages = 4;
+const totalImages = 5;
 
 Object.values(images).forEach(img => {
     img.onload = () => {
@@ -45,7 +52,7 @@ Object.values(images).forEach(img => {
     };
 });
 
-// Игрок - увеличен под новый размер canvas
+// Игрок с анимацией
 const player = {
     x: 120,
     y: 0,
@@ -58,13 +65,13 @@ const player = {
     groundY: canvas.height - 190,
     
     draw() {
-        if (images.player.complete && images.player.naturalWidth > 0) {
-            ctx.drawImage(images.player, this.x, this.y, this.width, this.height);
+        // Используем GIF для анимации
+        if (images.playerRun.complete && images.playerRun.naturalWidth > 0) {
+            ctx.drawImage(images.playerRun, this.x, this.y, this.width, this.height);
         } else {
-            // Рисуем человечка
+            // Запасной вариант
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
-            // Голова
             ctx.fillStyle = '#f39c12';
             ctx.beginPath();
             ctx.arc(this.x + this.width/2, this.y + 18, 18, 0, Math.PI * 2);
@@ -110,7 +117,6 @@ class Obstacle {
         if (images.fire.complete && images.fire.naturalWidth > 0) {
             ctx.drawImage(images.fire, this.x, this.y, this.width, this.height);
         } else {
-            // Рисуем огонь
             ctx.fillStyle = '#e74c3c';
             ctx.beginPath();
             ctx.moveTo(this.x + this.width/2, this.y);
@@ -180,18 +186,28 @@ class Coin {
     }
 }
 
-// Фон
+// Фон (дневной или вечерний)
 let bgX = 0;
+let currentBackground = 'day'; // 'day' или 'night'
 
 function drawBackground() {
-    if (images.background.complete && images.background.naturalWidth > 0) {
-        const bgWidth = images.background.width;
-        const bgHeight = images.background.height;
+    // Выбираем фон в зависимости от счёта
+    const bgImage = score >= 450 ? images.backgroundNight : images.backgroundDay;
+    
+    // Меняем режим если достигли 450
+    if (score >= 450 && currentBackground === 'day') {
+        currentBackground = 'night';
+        console.log('🌙 НАСТУПИЛ ВЕЧЕР!');
+    }
+    
+    if (bgImage.complete && bgImage.naturalWidth > 0) {
+        const bgWidth = bgImage.width;
+        const bgHeight = bgImage.height;
         const scale = canvas.height / bgHeight;
         const scaledWidth = bgWidth * scale;
         
         for (let i = -1; i <= Math.ceil(canvas.width / scaledWidth) + 1; i++) {
-            ctx.drawImage(images.background, 
+            ctx.drawImage(bgImage, 
                 bgX + i * scaledWidth, 0, 
                 scaledWidth, canvas.height);
         }
@@ -347,7 +363,6 @@ function displayLeaderboard(leaderboard) {
     const tbody = document.getElementById('leaderboardBody');
     tbody.innerHTML = '';
     
-    // Показываем топ-10
     const top10 = leaderboard.slice(0, 10);
     
     top10.forEach((entry, index) => {
@@ -371,11 +386,15 @@ function displayLeaderboard(leaderboard) {
 
 function gameOver() {
     gameRunning = false;
+    
+    // Останавливаем музыку
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+    
     document.getElementById('finalScore').textContent = score;
     document.getElementById('scoreComment').textContent = getScoreComment(score);
     document.getElementById('gameOver').style.display = 'block';
     
-    // Сохраняем результат в Google Sheets
     saveToGoogleSheets(playerData.name, playerData.position, score);
 }
 
@@ -392,10 +411,8 @@ function registerPlayer() {
     playerData.position = position;
     playerData.registered = true;
     
-    // Сохраняем в localStorage чтобы не спрашивать снова
     localStorage.setItem('officeRunnerPlayer', JSON.stringify(playerData));
     
-    // Показываем легенду
     document.getElementById('registrationScreen').style.display = 'none';
     document.getElementById('displayName').textContent = name;
     document.getElementById('displayPosition').textContent = position;
@@ -405,6 +422,11 @@ function registerPlayer() {
 function startGame() {
     document.getElementById('legendScreen').style.display = 'none';
     restartGame();
+    
+    // Запускаем музыку
+    bgMusic.play().catch(e => {
+        console.log('Автовоспроизведение заблокировано браузером');
+    });
 }
 
 function restartGame() {
@@ -417,11 +439,19 @@ function restartGame() {
     player.y = player.groundY;
     player.velocityY = 0;
     player.isJumping = false;
+    currentBackground = 'day'; // Сброс на дневной фон
     
     document.getElementById('score').textContent = 'ОЧКИ: 0';
     document.getElementById('gameOver').style.display = 'none';
     document.getElementById('leaderboardScreen').style.display = 'none';
     document.getElementById('savingStatus').style.display = 'none';
+    
+    // Запускаем музыку если еще не играет
+    if (bgMusic.paused) {
+        bgMusic.play().catch(e => {
+            console.log('Автовоспроизведение заблокировано');
+        });
+    }
 }
 
 function viewLeaderboard() {
@@ -438,15 +468,13 @@ function closeLeaderboard() {
     document.getElementById('gameOver').style.display = 'block';
 }
 
-// ИСПРАВЛЕНИЕ: Пробел работает в input, но не запускает игру
+// Пробел работает в input, но не запускает игру
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        // Если фокус НА input - разрешаем пробел (не preventDefault)
         if (document.activeElement.tagName === 'INPUT') {
-            return; // Пробел работает нормально в input
+            return;
         }
         
-        // Если фокус НЕ на input - используем для игры
         e.preventDefault();
         if (!gameRunning) {
             if (document.getElementById('legendScreen').style.display === 'block') {
@@ -458,7 +486,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Проверяем есть ли сохраненные данные игрока
+// Проверяем сохраненные данные
 window.addEventListener('load', () => {
     const savedPlayer = localStorage.getItem('officeRunnerPlayer');
     if (savedPlayer) {
@@ -470,5 +498,4 @@ window.addEventListener('load', () => {
     }
 });
 
-// Запуск игры
 gameLoop();
