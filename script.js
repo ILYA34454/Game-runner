@@ -438,19 +438,22 @@ function closeLeaderboard() {
     document.getElementById('gameOver').style.display = 'block';
 }
 
-// ИСПРАВЛЕНИЕ: Пробел не работает когда фокус на input
+// ИСПРАВЛЕНИЕ: Пробел работает в input, но не запускает игру
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        // Проверяем что фокус НЕ на input полях
-        if (document.activeElement.tagName !== 'INPUT') {
-            e.preventDefault();
-            if (!gameRunning) {
-                if (document.getElementById('legendScreen').style.display === 'block') {
-                    startGame();
-                }
-            } else {
-                player.jump();
+        // Если фокус НА input - разрешаем пробел (не preventDefault)
+        if (document.activeElement.tagName === 'INPUT') {
+            return; // Пробел работает нормально в input
+        }
+        
+        // Если фокус НЕ на input - используем для игры
+        e.preventDefault();
+        if (!gameRunning) {
+            if (document.getElementById('legendScreen').style.display === 'block') {
+                startGame();
             }
+        } else {
+            player.jump();
         }
     }
 });
