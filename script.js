@@ -43,7 +43,7 @@ const player = {
     height: 120, // Было 80, стало 120!
     velocityY: 0,
     gravity: 0.8,
-    jumpPower: -17, // Увеличен прыжок
+    jumpPower: -19, // Прыжок еще сильнее!
     isJumping: false,
     groundY: canvas.height - 140,
     
@@ -90,9 +90,11 @@ let coins = [];
 class Obstacle {
     constructor() {
         this.x = canvas.width;
-        this.y = player.groundY + player.height - 70; // Подняли чуть выше
+        this.y = player.groundY + player.height - 70;
         this.width = 55;
         this.height = 70;
+        // Хитбокс меньше для легкости!
+        this.hitboxShrink = 15; // Пикселей с каждой стороны
     }
     
     draw() {
@@ -116,6 +118,16 @@ class Obstacle {
             ctx.closePath();
             ctx.fill();
         }
+    }
+    
+    // Возвращаем уменьшенный хитбокс для проверки столкновения
+    getHitbox() {
+        return {
+            x: this.x + this.hitboxShrink,
+            y: this.y + this.hitboxShrink,
+            width: this.width - this.hitboxShrink * 2,
+            height: this.height - this.hitboxShrink * 2
+        };
     }
     
     update() {
@@ -230,7 +242,9 @@ function update() {
     obstacles = obstacles.filter(obs => {
         obs.update();
         
-        if (checkCollision(player, obs)) {
+        // Используем уменьшенный хитбокс огня!
+        const obstacleHitbox = obs.getHitbox();
+        if (checkCollision(player, obstacleHitbox)) {
             gameOver();
             return false;
         }
