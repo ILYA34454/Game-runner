@@ -68,7 +68,7 @@ const images = {
 
 images.backgroundDay.src = 'background.png';
 images.backgroundNight.src = 'background-night.png';
-images.playerRun.src = 'player-run-optimized.png'; // ← ИСПОЛЬЗУЕМ ОПТИМИЗИРОВАННЫЙ ФАЙЛ
+images.playerRun.src = 'player-run-optimized.png';
 images.fire.src = 'fire.png';
 images.coin.src = 'coin.png';
 
@@ -76,27 +76,57 @@ let imagesLoaded = 0;
 const totalImages = 5;
 let playerAnimation = null;
 
+// ← ИЗМЕНЕНО: Создаем анимацию сразу при загрузке sprite sheet
+images.playerRun.onload = function() {
+    console.log('✅ Player sprite sheet загружен!');
+    playerAnimation = new SpriteAnimation(
+        images.playerRun,
+        480,  // ширина одного кадра
+        480,  // высота кадра
+        12,   // всего 12 кадров
+        20    // FPS анимации
+    );
+    console.log('✅ Анимация инициализирована!');
+    imagesLoaded++;
+    checkAllImagesLoaded();
+};
+
+images.backgroundDay.onload = function() {
+    console.log('✅ Background Day загружен');
+    imagesLoaded++;
+    checkAllImagesLoaded();
+};
+
+images.backgroundNight.onload = function() {
+    console.log('✅ Background Night загружен');
+    imagesLoaded++;
+    checkAllImagesLoaded();
+};
+
+images.fire.onload = function() {
+    console.log('✅ Fire загружен');
+    imagesLoaded++;
+    checkAllImagesLoaded();
+};
+
+images.coin.onload = function() {
+    console.log('✅ Coin загружен');
+    imagesLoaded++;
+    checkAllImagesLoaded();
+};
+
+// Обработка ошибок загрузки
 Object.values(images).forEach(img => {
-    img.onload = () => {
-        imagesLoaded++;
-        console.log('Загружено:', img.src);
-        if (imagesLoaded === totalImages) {
-            console.log('✅ ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
-            
-            // Инициализируем анимацию с оптимизированными параметрами
-            playerAnimation = new SpriteAnimation(
-                images.playerRun,
-                480,  // ширина одного кадра
-                480,  // высота кадра
-                12,   // всего 12 кадров (оптимизировано!)
-                20    // FPS анимации
-            );
-        }
-    };
-    img.onerror = () => {
-        console.error('❌ Ошибка загрузки:', img.src);
+    img.onerror = function() {
+        console.error('❌ Ошибка загрузки:', this.src);
     };
 });
+
+function checkAllImagesLoaded() {
+    if (imagesLoaded === totalImages) {
+        console.log('🎉 ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
+    }
+}
 
 // Игрок с анимацией
 const player = {
@@ -112,16 +142,25 @@ const player = {
     
     draw() {
         if (playerAnimation && images.playerRun.complete) {
-            playerAnimation.draw(ctx, this.x, this.y, this.width, this.height);
+            try {
+                playerAnimation.draw(ctx, this.x, this.y, this.width, this.height);
+            } catch (e) {
+                console.error('Ошибка отрисовки анимации:', e);
+                this.drawFallback();
+            }
         } else {
-            // Запасной вариант (пока загружается)
-            ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
-            ctx.fillStyle = '#f39c12';
-            ctx.beginPath();
-            ctx.arc(this.x + this.width/2, this.y + 18, 18, 0, Math.PI * 2);
-            ctx.fill();
+            this.drawFallback();
         }
+    },
+    
+    drawFallback() {
+        // Запасной вариант
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
+        ctx.fillStyle = '#f39c12';
+        ctx.beginPath();
+        ctx.arc(this.x + this.width/2, this.y + 18, 18, 0, Math.PI * 2);
+        ctx.fill();
     },
     
     update() {
