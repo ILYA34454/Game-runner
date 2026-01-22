@@ -22,38 +22,59 @@ bgMusic.loop = true;
 bgMusic.volume = 0.3;
 
 // ============================================
-// КЛАСС ДЛЯ SPRITE SHEET АНИМАЦИИ
+// SPRITE SHEET АНИМАЦИЯ
 // ============================================
-class SpriteAnimation {
-    constructor(image, frameWidth, frameHeight, totalFrames, fps = 20) {
-        this.image = image;
-        this.frameWidth = frameWidth;
-        this.frameHeight = frameHeight;
-        this.totalFrames = totalFrames;
-        this.currentFrame = 0;
-        this.fps = fps;
-        this.frameInterval = 1000 / fps;
-        this.lastFrameTime = 0;
+const playerSprite = new Image();
+playerSprite.src = 'player-run-clean.png'; // ← НОВЫЙ ОЧИЩЕННЫЙ ФАЙЛ
+
+let spriteLoaded = false;
+let currentSpriteFrame = 0;
+const SPRITE_FRAME_WIDTH = 480;
+const SPRITE_FRAME_HEIGHT = 480;
+const TOTAL_SPRITE_FRAMES = 12;
+const SPRITE_FPS = 24; // ← Увеличил для более плавной анимации
+let lastSpriteUpdate = 0;
+
+playerSprite.onload = function() {
+    spriteLoaded = true;
+    console.log('✅ SPRITE ЗАГРУЖЕН!', playerSprite.width, 'x', playerSprite.height);
+};
+
+playerSprite.onerror = function() {
+    console.error('❌ ОШИБКА ЗАГРУЗКИ SPRITE!');
+};
+
+function updateSpriteAnimation() {
+    const now = Date.now();
+    if (now - lastSpriteUpdate > 1000 / SPRITE_FPS) {
+        currentSpriteFrame = (currentSpriteFrame + 1) % TOTAL_SPRITE_FRAMES;
+        lastSpriteUpdate = now;
+    }
+}
+
+function drawSprite(x, y, width, height) {
+    if (!spriteLoaded) {
+        // Запасной вариант
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(x, y + 35, width, height - 35);
+        ctx.fillStyle = '#f39c12';
+        ctx.beginPath();
+        ctx.arc(x + width/2, y + 18, 18, 0, Math.PI * 2);
+        ctx.fill();
+        return;
     }
 
-    update(currentTime) {
-        if (currentTime - this.lastFrameTime >= this.frameInterval) {
-            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
-            this.lastFrameTime = currentTime;
-        }
-    }
-
-    draw(ctx, x, y, width, height) {
-        // Для однострочного sprite sheet
-        const sourceX = this.currentFrame * this.frameWidth;
-        
+    try {
+        const sourceX = currentSpriteFrame * SPRITE_FRAME_WIDTH;
         ctx.drawImage(
-            this.image,
+            playerSprite,
             sourceX, 0,
-            this.frameWidth, this.frameHeight,
+            SPRITE_FRAME_WIDTH, SPRITE_FRAME_HEIGHT,
             x, y,
             width, height
         );
+    } catch (e) {
+        console.error('Ошибка отрисовки sprite:', e);
     }
 }
 
@@ -61,72 +82,30 @@ class SpriteAnimation {
 const images = {
     backgroundDay: new Image(),
     backgroundNight: new Image(),
-    playerRun: new Image(),
     fire: new Image(),
     coin: new Image()
 };
 
 images.backgroundDay.src = 'background.png';
 images.backgroundNight.src = 'background-night.png';
-images.playerRun.src = 'player-run-optimized.png';
 images.fire.src = 'fire.png';
 images.coin.src = 'coin.png';
 
 let imagesLoaded = 0;
-const totalImages = 5;
-let playerAnimation = null;
+const totalImages = 4;
 
-// ← ИЗМЕНЕНО: Создаем анимацию сразу при загрузке sprite sheet
-images.playerRun.onload = function() {
-    console.log('✅ Player sprite sheet загружен!');
-    playerAnimation = new SpriteAnimation(
-        images.playerRun,
-        480,  // ширина одного кадра
-        480,  // высота кадра
-        12,   // всего 12 кадров
-        20    // FPS анимации
-    );
-    console.log('✅ Анимация инициализирована!');
-    imagesLoaded++;
-    checkAllImagesLoaded();
-};
-
-images.backgroundDay.onload = function() {
-    console.log('✅ Background Day загружен');
-    imagesLoaded++;
-    checkAllImagesLoaded();
-};
-
-images.backgroundNight.onload = function() {
-    console.log('✅ Background Night загружен');
-    imagesLoaded++;
-    checkAllImagesLoaded();
-};
-
-images.fire.onload = function() {
-    console.log('✅ Fire загружен');
-    imagesLoaded++;
-    checkAllImagesLoaded();
-};
-
-images.coin.onload = function() {
-    console.log('✅ Coin загружен');
-    imagesLoaded++;
-    checkAllImagesLoaded();
-};
-
-// Обработка ошибок загрузки
 Object.values(images).forEach(img => {
-    img.onerror = function() {
-        console.error('❌ Ошибка загрузки:', this.src);
+    img.onload = () => {
+        imagesLoaded++;
+        console.log('Загружено:', img.src);
+        if (imagesLoaded === totalImages) {
+            console.log('✅ ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
+        }
+    };
+    img.onerror = () => {
+        console.error('❌ Ошибка загрузки:', img.src);
     };
 });
-
-function checkAllImagesLoaded() {
-    if (imagesLoaded === totalImages) {
-        console.log('🎉 ВСЕ КАРТИНКИ ЗАГРУЖЕНЫ!');
-    }
-}
 
 // Игрок с анимацией
 const player = {
@@ -141,26 +120,7 @@ const player = {
     groundY: canvas.height - 190,
     
     draw() {
-        if (playerAnimation && images.playerRun.complete) {
-            try {
-                playerAnimation.draw(ctx, this.x, this.y, this.width, this.height);
-            } catch (e) {
-                console.error('Ошибка отрисовки анимации:', e);
-                this.drawFallback();
-            }
-        } else {
-            this.drawFallback();
-        }
-    },
-    
-    drawFallback() {
-        // Запасной вариант
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(this.x, this.y + 35, this.width, this.height - 35);
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.arc(this.x + this.width/2, this.y + 18, 18, 0, Math.PI * 2);
-        ctx.fill();
+        drawSprite(this.x, this.y, this.width, this.height);
     },
     
     update() {
@@ -341,9 +301,7 @@ function update() {
     spawnCoin();
     
     // Обновляем анимацию персонажа
-    if (playerAnimation) {
-        playerAnimation.update(performance.now());
-    }
+    updateSpriteAnimation();
     
     obstacles = obstacles.filter(obs => {
         obs.update();
